@@ -83,8 +83,11 @@
     <Compile Include="Converters\LoginSecretTypeConverter.cs" />
     <Compile Include="Converters\ProxyTypeConverter.cs" />
     <Compile Include="Converters\VisibleConverter.cs" />
+    <Compile Include="Extension\XrayExtension.cs" />
     <Compile Include="Helpers\DateTimeUtils.cs" />
+    <Compile Include="Helpers\HttpClientUtil.cs" />
     <Compile Include="Models\Caddy.cs" />
+    <Compile Include="Models\External\XrayVersionResponse.cs" />
     <Compile Include="Models\Hosts\Host.cs" />
     <Compile Include="Models\Hosts\LoginSecretType.cs" />
     <Compile Include="Models\ProjectProgress.cs" />

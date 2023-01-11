@@ -1,0 +1,395 @@
+diff --git a/ProxySU.sln.DotSettings b/ProxySU.sln.DotSettings
+new file mode 100644
+index 0000000..a66baba
+--- /dev/null
++++ b/ProxySU.sln.DotSettings
+@@ -0,0 +1,4 @@
++﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
++	<s:Boolean x:Key="/Default/UserDictionary/Words/=Vless/@EntryIndexedValue">True</s:Boolean>
++	<s:Boolean x:Key="/Default/UserDictionary/Words/=Vmess/@EntryIndexedValue">True</s:Boolean>
++	<s:Boolean x:Key="/Default/UserDictionary/Words/=Xray/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>
+\ No newline at end of file
+diff --git a/ProxySuper.Core/Extension/XrayExtension.cs b/ProxySuper.Core/Extension/XrayExtension.cs
+new file mode 100644
+index 0000000..edeab1f
+--- /dev/null
++++ b/ProxySuper.Core/Extension/XrayExtension.cs
+@@ -0,0 +1,49 @@
++﻿using System;
++using Newtonsoft.Json;
++using ProxySuper.Core.Helpers;
++using System.Collections.Generic;
++using System.Linq;
++using System.Net.Http;
++using System.Threading.Tasks;
++using ProxySuper.Core.Models.External;
++using ProxySuper.Core.Models.Projects;
++
++namespace ProxySuper.Core.Extension
++{
++    public static class XrayExtension
++    {
++        private static readonly HttpClient _httpClient;
++
++        static XrayExtension()
++        {
++            _httpClient = HttpClientUtil.CreateHttpClient(5000);
++        }
++
++        public static async Task InitXrayCoreVersionListAsync()
++        {
++            var httpRequestMessage =
++                new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/repos/XTLS/Xray-core/releases");
++            httpRequestMessage.Headers.TryAddWithoutValidation("Accept", "application/vnd.github+json");
++            httpRequestMessage.Headers.TryAddWithoutValidation("X-GitHub-Api-Version", "2022-11-28");
++            httpRequestMessage.Headers.TryAddWithoutValidation("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36 Edg/107.0.1418.42");
++
++            try
++            {
++                var response = await _httpClient.SendAsync(httpRequestMessage).ConfigureAwait(false);
++                if (!response.IsSuccessStatusCode)
++                {
++                    return;
++                }
++
++                XraySettings.XrayCoreVersionList = JsonConvert
++                    .DeserializeObject<List<XrayVersionResponse>>(await response.Content.ReadAsStringAsync())
++                    ?.Select(e => $"{e.Version} {(e.IsPreRelease ? "[PRE]" : string.Empty)}")
++                    .ToList();
++            }
++            catch (Exception)
++            {
++                // ignore
++            }
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/ProxySuper.Core/Helpers/HttpClientUtil.cs b/ProxySuper.Core/Helpers/HttpClientUtil.cs
+new file mode 100644
+index 0000000..3403d6a
+--- /dev/null
++++ b/ProxySuper.Core/Helpers/HttpClientUtil.cs
+@@ -0,0 +1,68 @@
++﻿using System.Net.Http.Headers;
++using System.Net.Http;
++using System.Net;
++using System;
++
++namespace ProxySuper.Core.Helpers
++{
++    public class HttpClientUtil
++    {
++        /// <summary>
++        /// ProxyServer Environment Var.
++        /// </summary>
++        public const string ProxyServerVar = "DOTNET_PROXY_SERVER";
++
++        /// <summary>
++        /// 创建HttpClient.
++        /// </summary>
++        /// <param name="timeoutMilliseconds">timeout milliseconds.</param>
++        /// <returns><see cref="HttpClient"/>.</returns>
++        public static HttpClient CreateHttpClient(double? timeoutMilliseconds = null)
++        {
++            var defaultHttpClientHandler = new HttpClientHandler
++            {
++                AllowAutoRedirect = true,
++                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
++
++                // allow concurrent request
++                MaxConnectionsPerServer = 2000,
++
++                // allow all ssl cert
++                ServerCertificateCustomValidationCallback = (message, certificate2, sslPolicyError, arg4) => true,
++                UseCookies = false,
++                UseProxy = false,
++                Proxy = null,
++            };
++
++            var proxyServer = Environment.GetEnvironmentVariable(ProxyServerVar);
++            if (proxyServer != null)
++            {
++                try
++                {
++                    var proxyUri = new Uri(proxyServer);
++
++                    // has proxy server
++                    defaultHttpClientHandler.UseProxy = true;
++                    defaultHttpClientHandler.Proxy = new WebProxy(proxyUri);
++                }
++                catch (UriFormatException)
++                {
++                    // ignore
++                }
++            }
++
++            var httpClient = new HttpClient(defaultHttpClientHandler);
++
++            if (timeoutMilliseconds.HasValue)
++            {
++                httpClient.Timeout = TimeSpan.FromMilliseconds(timeoutMilliseconds.Value);
++            }
++
++            httpClient.DefaultRequestHeaders.ConnectionClose = false;
++            httpClient.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue { NoCache = true };
++            httpClient.MaxResponseContentBufferSize = 1024 * 1024 * 1024;
++
++            return httpClient;
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/ProxySuper.Core/Models/External/XrayVersionResponse.cs b/ProxySuper.Core/Models/External/XrayVersionResponse.cs
+new file mode 100644
+index 0000000..0ba3219
+--- /dev/null
++++ b/ProxySuper.Core/Models/External/XrayVersionResponse.cs
+@@ -0,0 +1,13 @@
++﻿using Newtonsoft.Json;
++
++namespace ProxySuper.Core.Models.External
++{
++    public class XrayVersionResponse
++    {
++        [JsonProperty("prerelease")]
++        public bool IsPreRelease { get; set; }
++
++        [JsonProperty("tag_name")]
++        public string Version { get; set; }
++    }
++}
+\ No newline at end of file
+diff --git a/ProxySuper.Core/Models/Projects/XraySettings.cs b/ProxySuper.Core/Models/Projects/XraySettings.cs
+index 2abc078..2492710 100644
+--- a/ProxySuper.Core/Models/Projects/XraySettings.cs
++++ b/ProxySuper.Core/Models/Projects/XraySettings.cs
+@@ -1,20 +1,20 @@
+ ﻿using ProxySuper.Core.Services;
+-using System;
+ using System.Collections.Generic;
+ using System.Linq;
+-using System.Text;
+-using System.Threading.Tasks;
+ 
+ namespace ProxySuper.Core.Models.Projects
+ {
+     public class XraySettings : V2raySettings
+     {
+-        public static List<string> FlowList = new List<string> { "xtls-rprx-origin", "xtls-rprx-origin-udp443", "xtls-rprx-direct", "xtls-rprx-direct-udp443", "xtls-rprx-splice", "xtls-rprx-splice-udp443" };
++        public static List<string> FlowList = new List<string> { "xtls-rprx-vision", "xtls-rprx-vision-udp443", "xtls-rprx-origin", "xtls-rprx-origin-udp443", "xtls-rprx-direct", "xtls-rprx-direct-udp443", "xtls-rprx-splice", "xtls-rprx-splice-udp443" };
+         public static List<string> UTLSList = new List<string> { "", "chrome", "firefox", "safari", "randomized" };
++        public static List<string> XrayCoreVersionList = new List<string> { string.Empty };
+ 
+         public string UTLS { get; set; } = UTLSList[1];
+ 
+-        public string Flow { get; set; } = FlowList[2];
++        public string Flow { get; set; } = FlowList[0];
++
++        public string XrayCoreVersion { get; set; } = XrayCoreVersionList.FirstOrDefault();
+ 
+         /// <summary>
+         /// vless xtls shareLink
+@@ -26,5 +26,12 @@ namespace ProxySuper.Core.Models.Projects
+                 return ShareLink.Build(RayType.VLESS_TCP_XTLS, this);
+             }
+         }
++
++        public string GetXrayCoreVersion()
++        {
++            return string.IsNullOrEmpty(XrayCoreVersion)
++                ? string.Empty
++                : $" --version {XrayCoreVersion.Replace("[PRE]", string.Empty).Replace("v", string.Empty)}";
++        }
+     }
+ }
+diff --git a/ProxySuper.Core/ProxySuper.Core.csproj b/ProxySuper.Core/ProxySuper.Core.csproj
+index d181519..738f741 100644
+--- a/ProxySuper.Core/ProxySuper.Core.csproj
++++ b/ProxySuper.Core/ProxySuper.Core.csproj
+@@ -83,8 +83,11 @@
+     <Compile Include="Converters\LoginSecretTypeConverter.cs" />
+     <Compile Include="Converters\ProxyTypeConverter.cs" />
+     <Compile Include="Converters\VisibleConverter.cs" />
++    <Compile Include="Extension\XrayExtension.cs" />
+     <Compile Include="Helpers\DateTimeUtils.cs" />
++    <Compile Include="Helpers\HttpClientUtil.cs" />
+     <Compile Include="Models\Caddy.cs" />
++    <Compile Include="Models\External\XrayVersionResponse.cs" />
+     <Compile Include="Models\Hosts\Host.cs" />
+     <Compile Include="Models\Hosts\LoginSecretType.cs" />
+     <Compile Include="Models\ProjectProgress.cs" />
+diff --git a/ProxySuper.Core/Services/XrayService.cs b/ProxySuper.Core/Services/XrayService.cs
+index 4c62dc9..7289d56 100644
+--- a/ProxySuper.Core/Services/XrayService.cs
++++ b/ProxySuper.Core/Services/XrayService.cs
+@@ -163,7 +163,7 @@ namespace ProxySuper.Core.Services
+                     EnsureSystemEnv();
+                     Progress.Percentage = 40;
+ 
+-                    RunCmd("bash -c \"$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)\" @ install");
++                    RunCmd($"bash -c \"$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)\" @ install{Settings.GetXrayCoreVersion()}");
+                     RunCmd("systemctl restart xray");
+                     Progress.Percentage = 100;
+ 
+@@ -374,11 +374,11 @@ namespace ProxySuper.Core.Services
+                 }
+             });
+         }
+-
++            
+         private void InstallXray()
+         {
+             Progress.Desc = ("开始安装Xray-Core");
+-            RunCmd("bash -c \"$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)\" @ install");
++            RunCmd($"bash -c \"$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)\" @ install{Settings.GetXrayCoreVersion()}");
+ 
+             if (!FileExists("/usr/local/bin/xray"))
+             {
+diff --git a/ProxySuper.Core/ViewModels/XrayEditorViewModel.cs b/ProxySuper.Core/ViewModels/XrayEditorViewModel.cs
+index 963dc91..5f1baf5 100644
+--- a/ProxySuper.Core/ViewModels/XrayEditorViewModel.cs
++++ b/ProxySuper.Core/ViewModels/XrayEditorViewModel.cs
+@@ -9,6 +9,7 @@ using System;
+ using System.Collections.Generic;
+ using System.Linq;
+ using System.Windows.Controls;
++using ProxySuper.Core.Extension;
+ 
+ namespace ProxySuper.Core.ViewModels
+ {
+@@ -65,6 +66,8 @@ namespace ProxySuper.Core.ViewModels
+ 
+     public partial class XrayEditorViewModel
+     {
++        public List<string> XrayCoreVersionList => XraySettings.XrayCoreVersionList;
++
+         public List<string> UTLSList { get => XraySettings.UTLSList; }
+ 
+         public List<string> KcpTypes => V2raySettings.DisguiseTypes;
+@@ -90,6 +93,29 @@ namespace ProxySuper.Core.ViewModels
+         };
+ 
+         public IMvxCommand RandomUuid => new MvxCommand(() => GetUuid());
++        public IMvxCommand GetXrayCoreVersion => new MvxCommand(GetXrayCoreVersionExecute);
++
++        private async void GetXrayCoreVersionExecute()
++        {
++            XrayCoreVersionBtnEnable = false;
++            await XrayExtension.InitXrayCoreVersionListAsync();
++            XrayCoreVersionBtnEnable = true;
++            await RaisePropertyChanged("XrayCoreVersionList");
++        }
++
++        private bool _xrayCoreVersionBtnEnable = true;
++        public bool XrayCoreVersionBtnEnable
++        {
++            get => _xrayCoreVersionBtnEnable;
++            set
++            {
++                if (_xrayCoreVersionBtnEnable != value)
++                {
++                    _xrayCoreVersionBtnEnable = value;
++                    RaisePropertyChanged();
++                }
++            }
++        }
+ 
+         public bool WithTLS
+         {
+@@ -111,6 +137,15 @@ namespace ProxySuper.Core.ViewModels
+             }
+         }
+ 
++        public string XrayCoreVersion
++        {
++            get => Settings.XrayCoreVersion;
++            set
++            {
++                Settings.XrayCoreVersion = value;
++                RaisePropertyChanged();
++            }
++        }
+ 
+         public string UTLS
+         {
+diff --git a/ProxySuper.WPF/Controls/XraySettingsControl.xaml b/ProxySuper.WPF/Controls/XraySettingsControl.xaml
+index cabed7c..0f34a91 100644
+--- a/ProxySuper.WPF/Controls/XraySettingsControl.xaml
++++ b/ProxySuper.WPF/Controls/XraySettingsControl.xaml
+@@ -167,13 +167,31 @@
+                                             Binding Path=Checked_VLESS_TCP_XTLS,
+                                             Converter={StaticResource VisibleConverter}
+                                         }">
+-                                <Label Content="{Binding Path=Flow}" Width="120" VerticalAlignment="Bottom"/>
++                                <Label Content="{DynamicResource Flow}" Width="120" VerticalAlignment="Bottom"/>
+                                 <ComboBox Width="260" 
+                                           VerticalAlignment="Bottom"
+                                           ItemsSource="{Binding Path=FlowList}"
+                                           SelectedValue="{Binding Flow,Mode=TwoWay}" />
+                             </StackPanel>
+ 
++                            <!--xray version-->
++                            <StackPanel Margin="0,15,0,0" Orientation="Horizontal">
++                                <Label Content="{DynamicResource XrayCoreVersion}" Width="120" VerticalAlignment="Bottom"/>
++                                <ComboBox Width="260" 
++                                          VerticalAlignment="Bottom"
++                                          ItemsSource="{Binding XrayCoreVersionList}"
++                                          SelectedValue="{Binding XrayCoreVersion,Mode=TwoWay}" />
++                                <Button Margin="5,0,0,0"
++                                        Padding="12,3"
++                                        Command="{Binding GetXrayCoreVersion}"
++                                        IsEnabled="{Binding XrayCoreVersionBtnEnable}"
++                                        Content="{DynamicResource XrayCoreVersionBtn}" />
++                            </StackPanel>
++
++                            <StackPanel Margin="120,15,0,0" Orientation="Horizontal">
++                                <Label Content="{DynamicResource Hint}"  Foreground="Red" />
++                            </StackPanel>
++
+                             <!--Cert-->
+                             <StackPanel Margin="0,15,0,0" Orientation="Horizontal">
+                                 <Label Content="{DynamicResource XrayWithTLS}" Width="120" />
+diff --git a/ProxySuper.WPF/Resources/Languages/en.xaml b/ProxySuper.WPF/Resources/Languages/en.xaml
+index a126fac..907abb7 100644
+--- a/ProxySuper.WPF/Resources/Languages/en.xaml
++++ b/ProxySuper.WPF/Resources/Languages/en.xaml
+@@ -87,7 +87,10 @@
+     <sys:String x:Key="XrayWithTLS">With TLS</sys:String>
+     <sys:String x:Key="XrayWithTLSDesc">Unchecked means upload your own TLS.</sys:String>
+     <sys:String x:Key="XrayUUID">UUID</sys:String>
++    <sys:String x:Key="XrayCoreVersion">Xray-Core Version</sys:String>
++    <sys:String x:Key="XrayCoreVersionBtn">Get Xray-Core version list</sys:String>
+     <sys:String x:Key="Flow">Flow</sys:String>
++    <sys:String x:Key="Hint">Do not select to default to the latest release, if flow choose vision, Xray-core needs v1.6.2+</sys:String>
+     <sys:String x:Key="UTLS">uTLS</sys:String>
+     <sys:String x:Key="MultiUser">Multi User</sys:String>
+     <sys:String x:Key="MultiUserHelp">Multi Id split with ","</sys:String>
+diff --git a/ProxySuper.WPF/Resources/Languages/tw_cn.xaml b/ProxySuper.WPF/Resources/Languages/tw_cn.xaml
+index 478ce1c..6e908d4 100644
+--- a/ProxySuper.WPF/Resources/Languages/tw_cn.xaml
++++ b/ProxySuper.WPF/Resources/Languages/tw_cn.xaml
+@@ -88,6 +88,9 @@
+     <sys:String x:Key="XrayWithTLSDesc">如上傳自有證書，則取消對勾。</sys:String>
+     <sys:String x:Key="XrayUUID">UUID</sys:String>
+     <sys:String x:Key="Flow">流控</sys:String>
++    <sys:String x:Key="XrayCoreVersion">Xray-Core版本</sys:String>
++    <sys:String x:Key="XrayCoreVersionBtn">獲取版本</sys:String>
++    <sys:String x:Key="Hint">不選擇版本默認安裝最新發行版本，如果流控選擇vision，Xray-core需要v1.6.2+</sys:String>
+     <sys:String x:Key="UTLS">uTLS</sys:String>
+     <sys:String x:Key="MultiUser">多用戶</sys:String>
+     <sys:String x:Key="MultiUserHelp">多個UUID用“,”分隔</sys:String>
+diff --git a/ProxySuper.WPF/Resources/Languages/zh_cn.xaml b/ProxySuper.WPF/Resources/Languages/zh_cn.xaml
+index 48fe1a3..aeb1be3 100644
+--- a/ProxySuper.WPF/Resources/Languages/zh_cn.xaml
++++ b/ProxySuper.WPF/Resources/Languages/zh_cn.xaml
+@@ -89,6 +89,9 @@
+     <sys:String x:Key="XrayWithTLSDesc">如上传自有证书，则取消对勾。</sys:String>
+     <sys:String x:Key="XrayUUID">UUID</sys:String>
+     <sys:String x:Key="Flow">流控</sys:String>
++    <sys:String x:Key="XrayCoreVersion">Xray-Core版本</sys:String>
++    <sys:String x:Key="XrayCoreVersionBtn">获取版本</sys:String>
++    <sys:String x:Key="Hint">不选择版本默认安装最新发行版，如果流控选择vision，Xray-core需要v1.6.2+</sys:String>
+     <sys:String x:Key="UTLS">uTLS</sys:String>
+     <sys:String x:Key="MultiUser">多用户</sys:String>
+     <sys:String x:Key="MultiUserHelp">多个UUID用“,”分隔</sys:String>

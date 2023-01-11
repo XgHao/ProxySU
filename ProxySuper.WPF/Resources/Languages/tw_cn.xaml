@@ -88,6 +88,9 @@
     <sys:String x:Key="XrayWithTLSDesc">如上傳自有證書，則取消對勾。</sys:String>
     <sys:String x:Key="XrayUUID">UUID</sys:String>
     <sys:String x:Key="Flow">流控</sys:String>
+    <sys:String x:Key="XrayCoreVersion">Xray-Core版本</sys:String>
+    <sys:String x:Key="XrayCoreVersionBtn">獲取版本</sys:String>
+    <sys:String x:Key="Hint">不選擇版本默認安裝最新發行版本，如果流控選擇vision，Xray-core需要v1.6.2+</sys:String>
     <sys:String x:Key="UTLS">uTLS</sys:String>
     <sys:String x:Key="MultiUser">多用戶</sys:String>
     <sys:String x:Key="MultiUserHelp">多個UUID用“,”分隔</sys:String>

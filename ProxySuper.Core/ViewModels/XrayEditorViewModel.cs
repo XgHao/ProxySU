@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Controls;
+using ProxySuper.Core.Extension;
 
 namespace ProxySuper.Core.ViewModels
 {
@@ -65,6 +66,8 @@ namespace ProxySuper.Core.ViewModels
 
     public partial class XrayEditorViewModel
     {
+        public List<string> XrayCoreVersionList => XraySettings.XrayCoreVersionList;
+
         public List<string> UTLSList { get => XraySettings.UTLSList; }
 
         public List<string> KcpTypes => V2raySettings.DisguiseTypes;
@@ -90,6 +93,29 @@ namespace ProxySuper.Core.ViewModels
         };
 
         public IMvxCommand RandomUuid => new MvxCommand(() => GetUuid());
+        public IMvxCommand GetXrayCoreVersion => new MvxCommand(GetXrayCoreVersionExecute);
+
+        private async void GetXrayCoreVersionExecute()
+        {
+            XrayCoreVersionBtnEnable = false;
+            await XrayExtension.InitXrayCoreVersionListAsync();
+            XrayCoreVersionBtnEnable = true;
+            await RaisePropertyChanged("XrayCoreVersionList");
+        }
+
+        private bool _xrayCoreVersionBtnEnable = true;
+        public bool XrayCoreVersionBtnEnable
+        {
+            get => _xrayCoreVersionBtnEnable;
+            set
+            {
+                if (_xrayCoreVersionBtnEnable != value)
+                {
+                    _xrayCoreVersionBtnEnable = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
 
         public bool WithTLS
         {
@@ -111,6 +137,15 @@ namespace ProxySuper.Core.ViewModels
             }
         }
 
+        public string XrayCoreVersion
+        {
+            get => Settings.XrayCoreVersion;
+            set
+            {
+                Settings.XrayCoreVersion = value;
+                RaisePropertyChanged();
+            }
+        }
 
         public string UTLS
         {

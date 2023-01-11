@@ -87,7 +87,10 @@
     <sys:String x:Key="XrayWithTLS">With TLS</sys:String>
     <sys:String x:Key="XrayWithTLSDesc">Unchecked means upload your own TLS.</sys:String>
     <sys:String x:Key="XrayUUID">UUID</sys:String>
+    <sys:String x:Key="XrayCoreVersion">Xray-Core Version</sys:String>
+    <sys:String x:Key="XrayCoreVersionBtn">Get Xray-Core version list</sys:String>
     <sys:String x:Key="Flow">Flow</sys:String>
+    <sys:String x:Key="Hint">Do not select to default to the latest release, if flow choose vision, Xray-core needs v1.6.2+</sys:String>
     <sys:String x:Key="UTLS">uTLS</sys:String>
     <sys:String x:Key="MultiUser">Multi User</sys:String>
     <sys:String x:Key="MultiUserHelp">Multi Id split with ","</sys:String>
