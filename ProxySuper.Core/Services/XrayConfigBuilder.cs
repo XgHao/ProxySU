@@ -118,7 +118,7 @@ namespace ProxySuper.Core.Services
 
             var xrayConfig = LoadXrayConfig();
 
-            var baseBound = GetBound("VLESS_TCP_XTLS.json");
+            var baseBound = parameters.Flow.ToLower().Contains("vision") ? GetBound("VLESS_TCP_XTLS_Vision.json") : GetBound("VLESS_TCP_XTLS.json");
             baseBound.port = parameters.Port;
             baseBound.settings.fallbacks.Add(JToken.FromObject(new
             {

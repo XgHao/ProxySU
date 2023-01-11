@@ -226,6 +226,11 @@ namespace ProxySuper.Core.Services
             string parametersURL = string.Empty;
             if (xrayType != RayType.Trojan_TCP)
             {
+                if (settings is XraySettings xray && xrayType == RayType.VLESS_TCP_XTLS && xray.Flow.ToLower().Contains("vision"))
+                {
+                    _security = "tls";
+                }
+
                 // 4.3 传输层相关段
                 parametersURL = $"?type={_type}&encryption={_encryption}&security={_security}&path={HttpUtility.UrlEncode(_path)}";
 
