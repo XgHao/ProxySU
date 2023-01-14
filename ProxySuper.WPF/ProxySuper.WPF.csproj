@@ -620,7 +620,9 @@
     <None Include="Templates\xray\server\05_inbounds\VLESS_TCP_XTLS.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Templates\xray\server\05_inbounds\VLESS_TCP_XTLS_Vision.json" />
+    <None Include="Templates\xray\server\05_inbounds\VLESS_TCP_XTLS_Vision.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Templates\xray\server\05_inbounds\VLESS_WS.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
