@@ -90,7 +90,7 @@
     <sys:String x:Key="XrayCoreVersion">Xray-Core Version</sys:String>
     <sys:String x:Key="XrayCoreVersionBtn">Get Xray-Core version list</sys:String>
     <sys:String x:Key="Flow">Flow</sys:String>
-    <sys:String x:Key="Hint">Do not select to default to the latest release, if flow choose vision, Xray-core needs v1.6.2+</sys:String>
+    <sys:String x:Key="Hint">Hint: Do not select to default to the latest release, if flow choose [vision], Xray-core needs v1.6.2+. Select [_vision, none] flow control to accept normal TLS connection with low security, generally used for compatible IOS clients</sys:String>
     <sys:String x:Key="UTLS">uTLS</sys:String>
     <sys:String x:Key="MultiUser">Multi User</sys:String>
     <sys:String x:Key="MultiUserHelp">Multi Id split with ","</sys:String>

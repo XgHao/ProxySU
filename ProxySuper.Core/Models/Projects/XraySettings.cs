@@ -6,7 +6,7 @@ namespace ProxySuper.Core.Models.Projects
 {
     public class XraySettings : V2raySettings
     {
-        public static List<string> FlowList = new List<string> { "xtls-rprx-vision", "xtls-rprx-vision-udp443", "xtls-rprx-origin", "xtls-rprx-origin-udp443", "xtls-rprx-direct", "xtls-rprx-direct-udp443", "xtls-rprx-splice", "xtls-rprx-splice-udp443" };
+        public static List<string> FlowList = new List<string> { "xtls-rprx-vision", "xtls-rprx-vision-udp443", "xtls-rprx-vision,none", "xtls-rprx-origin", "xtls-rprx-origin-udp443", "xtls-rprx-direct", "xtls-rprx-direct-udp443", "xtls-rprx-splice", "xtls-rprx-splice-udp443" };
         public static List<string> UTLSList = new List<string> { "", "chrome", "firefox", "safari", "randomized" };
         public static List<string> XrayCoreVersionList = new List<string> { string.Empty };
 

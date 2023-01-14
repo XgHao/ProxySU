@@ -91,7 +91,7 @@
     <sys:String x:Key="Flow">流控</sys:String>
     <sys:String x:Key="XrayCoreVersion">Xray-Core版本</sys:String>
     <sys:String x:Key="XrayCoreVersionBtn">获取版本</sys:String>
-    <sys:String x:Key="Hint">不选择版本默认安装最新发行版，如果流控选择vision，Xray-core需要v1.6.2+</sys:String>
+    <sys:String x:Key="Hint">提示：不选择版本默认安装最新发行版，如果流控选择[_vision]，Xray-core 需要v1.6.2+。选择[_vision,none] 流控以接受安全性较低的普通 TLS 连接，一般情况下用于兼容IOS客户端</sys:String>
     <sys:String x:Key="UTLS">uTLS</sys:String>
     <sys:String x:Key="MultiUser">多用户</sys:String>
     <sys:String x:Key="MultiUserHelp">多个UUID用“,”分隔</sys:String>
